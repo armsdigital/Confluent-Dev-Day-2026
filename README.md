@@ -8,14 +8,14 @@ An enterprise-grade real-time event processing platform built on **Confluent Clo
 ---
 
 ## Architecture & Data Flow
-
+```
 +-------------------+        +--------------------+        +-----------------------+        +---------------------------+
 | Datagen Connector |  --->  |   orders_stream    |  --->  |  Confluent Flink SQL  |  --->  | dynamic_product_pricing   |
 | (Mock Checkout)   |        |   (Kafka Topic)    |        | (Stream Analytics)    |        | high_risk_alerts          |
 +-------------------+        +--------------------+        +-----------------------+        +---------------------------+
 |                                                              |
 +------------------ Schema Registry ----------------------------+
-
+```
 1. **Ingestion Layer:** Real-time checkout telemetry generated via **Confluent Datagen Source Connector** streaming into the `orders_stream` topic.
 2. **Governance Layer:** **Confluent Schema Registry** enforces AVRO/JSON Schema compatibility across event streams.
 3. **Stream Processing Layer:** **Confluent Cloud Flink SQL** executes continuous aggregations to compute real-time price updates and flag elevated transaction bursts.
