@@ -57,32 +57,40 @@ Stream Processing Logic (Flink SQL)
 Evaluates real-time demand velocity per product_id and adjusts prices accordingly:
 
 ```
-CREATE TABLE dynamic_product_pricing AS
+CREATE TABLE high_risk_alerts_topic WITH (
+    'connector' = 'confluent',
+    'value.format' = 'json-registry'
+) AS
 SELECT 
-    product_id,
-    AVG(base_price) AS standard_price,
-    COUNT(order_id) AS demand_velocity,
-    CASE 
-        WHEN COUNT(order_id) > 20 THEN AVG(base_price) * 1.15
-        WHEN COUNT(order_id) > 10 THEN AVG(base_price) * 1.05
-        ELSE AVG(base_price)
-    END AS surge_price
+    COALESCE(itemid, 'UNKNOWN') AS product_id,
+    COUNT(orderid) AS transaction_count,
+    SUM(orderunits) AS total_units
 FROM orders_stream
-GROUP BY product_id;
+WHERE itemid IS NOT NULL
+GROUP BY itemid
+HAVING COUNT(orderid) > 5;
 ```
 
 3. High-Risk Account Fraud Alerts
 Identifies users executing high-frequency checkout attempts:
 
 ```
-CREATE TABLE high_risk_alerts AS
+CREATE TABLE dynamic_product_pricing_topic WITH (
+    'connector' = 'confluent',
+    'value.format' = 'json-registry'
+) AS
 SELECT 
-    user_id,
-    COUNT(order_id) AS transaction_count,
-    SUM(base_price * quantity) AS total_spent
+    COALESCE(itemid, 'UNKNOWN') AS product_id,
+    AVG(orderunits) AS standard_units,
+    COUNT(orderid) AS demand_velocity,
+    CASE 
+        WHEN COUNT(orderid) > 20 THEN AVG(orderunits) * 1.15
+        WHEN COUNT(orderid) > 10 THEN AVG(orderunits) * 1.05
+        ELSE AVG(orderunits)
+    END AS surge_units
 FROM orders_stream
-GROUP BY user_id
-HAVING COUNT(order_id) > 5;
+WHERE itemid IS NOT NULL
+GROUP BY itemid;
 ```
 
 
